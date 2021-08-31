@@ -166,7 +166,8 @@ namespace PoolStudio.WEB.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ItemId,ImageName,ClasificationId,ItemName,Modelo,Brand,Comment")] Item item)
+        [Obsolete]
+        public async Task<IActionResult> Edit(int id, [Bind("ItemId,ImageFile,ClasificationId,ItemName,Modelo,Brand,Comment")] Item item)
         {
             if (id != item.ItemId)
             {
@@ -177,6 +178,18 @@ namespace PoolStudio.WEB.Controllers
             {
                 try
                 {
+                    // Save image to wwwroot/UserImages
+                    string wwwRootPath = _hostEnvironment.WebRootPath;
+                    string fileName = Path.GetFileNameWithoutExtension(item.ImageFile.FileName);
+                    string extension = Path.GetExtension(item.ImageFile.FileName);
+                    item.ImageName = fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
+                    string path = Path.Combine(wwwRootPath + "/Imagenes/", fileName);
+                    using (var fileStream = new FileStream(path, FileMode.Create))
+                    {
+                        await item.ImageFile.CopyToAsync(fileStream);
+                    }
+
+                    // Insert record
                     _context.Update(item);
                     await _context.SaveChangesAsync();
                 }
